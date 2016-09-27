@@ -23,23 +23,29 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-class MyClient implements ActionListener {
+/**
+ * The client class and user facing GUI
+ * 
+ * @author Tom Thomas
+ */
+class MyClient implements ActionListener
+{
 	Socket s;
-	DataInputStream dis;
-	DataOutputStream dos;
+	DataInputStream dIS;	//Input stream for messages
+	DataOutputStream dOS;	//Output stream for messages
 
 	JButton sendButton, logoutButton, loginButton, exitButton;
 	JFrame chatWindow;
 	JTextArea txtBroadcast;
 	JTextArea txtMessage;
-	JList<String> usersList;
+	JList<String> userList;
 
 	public void displayGUI() {
 		chatWindow = new JFrame();
 		txtBroadcast = new JTextArea(5, 30);
 		txtBroadcast.setEditable(false);
 		txtMessage = new JTextArea(2, 20);
-		usersList = new JList<String>();
+		userList = new JList<String>();
 
 		sendButton = new JButton("Send");
 		logoutButton = new JButton("Log out");
@@ -70,7 +76,7 @@ class MyClient implements ActionListener {
 		JPanel east = new JPanel();
 		east.setLayout(new BorderLayout());
 		east.add(new JLabel("Online Users", JLabel.CENTER), "East");
-		east.add(new JScrollPane(usersList), "South");
+		east.add(new JScrollPane(userList), "South");
 
 		chatWindow.add(east, "East");
 
@@ -81,22 +87,28 @@ class MyClient implements ActionListener {
 		chatWindow.setTitle("Login for Chat");
 		chatWindow.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		chatWindow.setVisible(true);
+		
 		sendButton.addActionListener(this);
 		logoutButton.addActionListener(this);
 		loginButton.addActionListener(this);
 		exitButton.addActionListener(this);
 		logoutButton.setEnabled(false);
 		loginButton.setEnabled(true);
+		
+		//Highlights text when message box gains focus
 		txtMessage.addFocusListener(new FocusAdapter() {
-			public void focusGained(FocusEvent fe) {
+			public void focusGained(FocusEvent fe)
+			{
 				txtMessage.selectAll();
 			}
 		});
 
+		//Client window closing event. A message is displayed before exiting.
 		chatWindow.addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent ev) {
+			public void windowClosing(WindowEvent ev)
+			{
 				if (s != null) {
-					JOptionPane.showMessageDialog(chatWindow, "u r logged out right now. ", "Exit",
+					JOptionPane.showMessageDialog(chatWindow, "You are now logged out!", "Exit",
 							JOptionPane.INFORMATION_MESSAGE);
 					logoutSession();
 				}
@@ -105,47 +117,71 @@ class MyClient implements ActionListener {
 		});
 	}
 
-	public void actionPerformed(ActionEvent ev) {
+	public void actionPerformed(ActionEvent ev)
+	{
 		JButton temp = (JButton) ev.getSource();
-		if (temp == sendButton) {
-			if (s == null) {
-				JOptionPane.showMessageDialog(chatWindow, "u r not logged in. plz login first");
+		
+		if (temp == sendButton)
+		{
+			if (s == null)
+			{
+				JOptionPane.showMessageDialog(chatWindow, "Please login first!");
 				return;
 			}
-			try {
-				dos.writeUTF(txtMessage.getText());
+			
+			try
+			{
+				dOS.writeUTF(txtMessage.getText());
 				txtMessage.setText("");
-			} catch (Exception excp) {
+				System.out.println("Booooo");
+			} catch (Exception excp)
+			{
 				txtBroadcast.append("\nsend button click :" + excp);
 			}
 		}
-		if (temp == loginButton) {
-			String uname = JOptionPane.showInputDialog(chatWindow, "Enter Your lovely nick name: ");
-			if (uname != null)
-				clientChat(uname);
+		
+		if (temp == loginButton)
+		{
+			String uName = JOptionPane.showInputDialog(chatWindow, "Enter your preferred nick name: ");
+			
+			if (uName != null)
+				clientChat(uName);
 		}
-		if (temp == logoutButton) {
+		
+		if (temp == logoutButton)
+		{
 			if (s != null)
 				logoutSession();
 		}
-		if (temp == exitButton) {
-			if (s != null) {
-				JOptionPane.showMessageDialog(chatWindow, "u r logged out right now. ", "Exit",
-						JOptionPane.INFORMATION_MESSAGE);
+		
+		if (temp == exitButton)
+		{
+			if (s != null)
+			{
 				logoutSession();
+				JOptionPane.showMessageDialog(chatWindow, "You are now logged out!", "Exit",
+						JOptionPane.INFORMATION_MESSAGE);
 			}
+			
 			System.exit(0);
 		}
 	}
 
-	public void logoutSession() {
+	/**
+	 * Logout routine
+	 */
+	public void logoutSession()
+	{
 		if (s == null)
 			return;
-		try {
-			dos.writeUTF(JChatServer.LOGOUT_MESSAGE);
+		
+		try
+		{
+			dOS.writeUTF(JChatServer.LOGOUT_MESSAGE);
 			Thread.sleep(500);
 			s = null;
-		} catch (Exception e) {
+		} catch (Exception e)
+		{
 			txtBroadcast.append("\n inside logoutSession Method" + e);
 		}
 
@@ -154,61 +190,100 @@ class MyClient implements ActionListener {
 		chatWindow.setTitle("Login for Chat");
 	}
 
-	public void clientChat(String uname) {
-		try {
+	/**
+	 * When a new user joins the chat
+	 * 
+	 * @param uName The nick name
+	 */
+	public void clientChat(String uName)
+	{
+		try
+		{
 			s = new Socket(InetAddress.getLocalHost(), JChatServer.PORT);
-			dis = new DataInputStream(s.getInputStream());
-			dos = new DataOutputStream(s.getOutputStream());
-			ClientThread ct = new ClientThread(dis, this);
+			dIS = new DataInputStream(s.getInputStream());
+			dOS = new DataOutputStream(s.getOutputStream());
+			
+			ClientThread ct = new ClientThread(dIS, this);
 			Thread t1 = new Thread(ct);
 			t1.start();
-			dos.writeUTF(uname);
-			chatWindow.setTitle(uname + " Chat Window");
-		} catch (Exception e) {
+			
+			dOS.writeUTF(uName);
+			chatWindow.setTitle(uName + " Chat Window");
+		} catch (Exception e)
+		{
 			txtBroadcast.append("\nClient Constructor " + e);
 		}
+		
 		logoutButton.setEnabled(true);
 		loginButton.setEnabled(false);
 	}
 
+	/**
+	 * The constructor
+	 */
 	public MyClient() {
 		displayGUI();
 	}
 
-	public static void main(String[] args) {
+	/**
+	 * Initializes the client
+	 * @param args
+	 */
+	public static void main(String[] args)
+	{
 		new MyClient();
 	}
 }
 
-class ClientThread implements Runnable {
+/**
+ * The client thread continuously reads the Input stream from the
+ * socket and updates the UI accordingly.
+ */
+class ClientThread implements Runnable
+{
 	DataInputStream dis;
 	MyClient client;
 
-	ClientThread(DataInputStream dis, MyClient client) {
+	ClientThread(DataInputStream dis, MyClient client)
+	{
 		this.dis = dis;
 		this.client = client;
 	}
 
-	public void run() {
+	//Looks for messages from cocket on a loop
+	public void run()
+	{
 		String s2 = "";
+		
 		do {
 			try {
 				s2 = dis.readUTF();
+				
 				if (s2.startsWith(JChatServer.UPDATE_USERS))
-					updateUsersList(s2);
+					updateUserList(s2);
+				
 				else if (s2.equals(JChatServer.LOGOUT_MESSAGE))
 					break;
+				
 				else
 					client.txtBroadcast.append("\n" + s2);
+				
 				int lineOffset = client.txtBroadcast.getLineStartOffset(client.txtBroadcast.getLineCount() - 1);
 				client.txtBroadcast.setCaretPosition(lineOffset);
-			} catch (Exception e) {
+			} catch (Exception e)
+			{
 				client.txtBroadcast.append("\nClientThread run : " + e);
 			}
 		} while (true);
 	}
 
-	public void updateUsersList(String ul) {
+	/**
+	 * Updates the user list if new users join the chat room
+	 * 
+	 * @param ul update message
+	 */
+	public void updateUserList(String ul)
+	{
 		Vector<String> ulist = new Vector<String>();
 
 		ul = ul.replace("[", "");
@@ -216,10 +291,12 @@ class ClientThread implements Runnable {
 		ul = ul.replace(JChatServer.UPDATE_USERS, "");
 		StringTokenizer st = new StringTokenizer(ul, ",");
 
-		while (st.hasMoreTokens()) {
+		while (st.hasMoreTokens())
+		{
 			String temp = st.nextToken();
 			ulist.add(temp);
 		}
-		client.usersList.setListData(ulist);
+		
+		client.userList.setListData(ulist);
 	}
 }

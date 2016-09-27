@@ -6,7 +6,7 @@ import java.util.ArrayList;
  * The main server class. This is initialized first before
  * initializing the clients.
  * 
- * @author Tom Thomas *
+ * @author Tom Thomas
  */
 class JChatServer
 {
@@ -16,7 +16,7 @@ class JChatServer
 	Socket s;
 
 	public final static int PORT = 10;
-	public final static String UPDATE_USERS = "updateuserlist:";	//Message to update users
+	public final static String UPDATE_USERS = "@@updateuserlist@@:";	//Message to update users
 	public final static String LOGOUT_MESSAGE = "@@logmeout@@:";	//Message to log the user out
 
 	public JChatServer()
