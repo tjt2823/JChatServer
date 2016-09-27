@@ -2,24 +2,34 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
+/**
+ * The main server class. This is initialized first before
+ * initializing the clients.
+ * 
+ * @author Tom Thomas *
+ */
 class JChatServer
 {
-	ArrayList<Socket> al = new ArrayList<Socket>();
-	ArrayList<String> users = new ArrayList<String>();
+	ArrayList<Socket> clients = new ArrayList<Socket>();	//A list of clients
+	ArrayList<String> users = new ArrayList<String>();	//A list of user names
 	ServerSocket ss;
 	Socket s;
 
 	public final static int PORT = 10;
-	public final static String UPDATE_USERS = "updateuserslist:";
-	public final static String LOGOUT_MESSAGE = "@@logoutme@@:";
+	public final static String UPDATE_USERS = "updateuserlist:";	//Message to update users
+	public final static String LOGOUT_MESSAGE = "@@logmeout@@:";	//Message to log the user out
 
-	public JChatServer() {
+	public JChatServer()
+	{
 		try {
 			ss = new ServerSocket(PORT);
 			System.out.println("Server Started " + ss);
-			while (true) {
+			
+			//Listens for new connections and starts a new thread for each client
+			while (true)
+			{
 				s = ss.accept();
-				Runnable r = new MyThread(s, al, users);
+				Runnable r = new MyThread(s, clients, users);
 				Thread t = new Thread(r);
 				t.start();
 			}
@@ -28,7 +38,12 @@ class JChatServer
 		}
 	}
 
-	public static void main(String[] args) {
+	/**
+	 * Initializes the server
+	 * @param args
+	 */
+	public static void main(String[] args)
+	{
 		new JChatServer();
 	}
 }
